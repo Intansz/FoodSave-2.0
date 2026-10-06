@@ -1,0 +1,107 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/plus-jakarta-sans';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/*
+|--------------------------------------------------------------------------
+| FoodSave design tokens  (sumber: design.md §3)
+|--------------------------------------------------------------------------
+| Satu-satunya tempat warna, tipografi, radius & shadow didefinisikan.
+| Komponen Blade hanya memakai token ini, tidak ada hex di dalam view.
+|
+| Radius  : 8px = rounded-lg (button/input) · 12px = rounded-xl (small card)
+|           16px = rounded-2xl (product card) · 20px = rounded-hero · pill = rounded-full
+*/
+@theme {
+    --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', Inter, ui-sans-serif, system-ui, sans-serif;
+
+    /* Brand */
+    --color-primary-50: #f1f8f2;
+    --color-primary-100: #e8f5e9;
+    --color-primary-500: #388e3c;
+    --color-primary-600: #2e7d32;
+    --color-primary-700: #1f6b2b;
+
+    /* Teks */
+    --color-ink-900: #1f2933;
+    --color-ink-700: #374151;
+    --color-ink-500: #667085;
+
+    /* Permukaan */
+    --color-canvas: #f7f9f7;
+    --color-surface: #ffffff;
+    --color-line: #d9e1dc;
+
+    /* Status */
+    --color-success: #217a36;
+    --color-success-bg: #eaf6ed;
+    --color-warning: #b45309;
+    --color-warning-bg: #fff7e6;
+    --color-danger: #c62828;
+    --color-danger-bg: #fdecec;
+    --color-accent: #f59e0b; /* Flash Deal / diskon. Jangan dipakai sebagai warna teks di atas putih. */
+
+    /* Type scale */
+    --text-display: 48px;
+    --text-display--line-height: 56px;
+    --text-display-sm: 32px;
+    --text-display-sm--line-height: 40px;
+    --text-h1: 36px;
+    --text-h1--line-height: 44px;
+    --text-h2: 28px;
+    --text-h2--line-height: 36px;
+    --text-h3: 22px;
+    --text-h3--line-height: 30px;
+    --text-h4: 18px;
+    --text-h4--line-height: 26px;
+    --text-body-lg: 17px;
+    --text-body-lg--line-height: 28px;
+    --text-body: 15px;
+    --text-body--line-height: 24px;
+    --text-body-sm: 14px;
+    --text-body-sm--line-height: 20px;
+    --text-caption: 12px;
+    --text-caption--line-height: 18px;
+
+    --radius-hero: 20px;
+
+    --shadow-card: 0 4px 16px rgb(31 41 51 / 0.08);
+    --shadow-card-hover: 0 8px 24px rgb(31 41 51 / 0.12);
+}
+
+@layer base {
+    body {
+        @apply bg-canvas text-body text-ink-700 antialiased;
+    }
+
+    /* design.md §10.3 — focus 2px #1F6B2B, offset 2px */
+    :focus-visible {
+        outline: 2px solid var(--color-primary-700);
+        outline-offset: 2px;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@utility no-scrollbar {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
