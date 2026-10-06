@@ -11,20 +11,31 @@ class EnsureRole
     /**
      * Pemakaian: ->middleware('role:merchant') atau 'role:consumer,admin'.
      */
+
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();
 
-        abort_unless($user && in_array($user->role->value, $roles, true), 403);
+        abort_unless(
+            $user && in_array($user->role->value, $roles, true),
+            403
+        );
 
-        if (
-            $user->role->value === 'merchant'
-            && (! $user->merchant || $user->merchant->verification_status->value !== 'approved')
-        ) {
-            return redirect('/')->with(
-                'status',
-                'Akun mitra kamu masih menunggu persetujuan admin.'
-            );
+        if ($user->role->value === 'merchant') {
+            $merchant = $user->merchant;
+
+            abort_unless($merchant, 404);
+
+            if (! $merchant->canSell()) {
+                $message = match ($merchant->verification_status->value) {
+                    'pending' => 'Akun mitra kamu masih menunggu persetujuan admin.',
+                    'rejected' => 'Pengajuan mitra kamu ditolak.',
+                    'suspended' => 'Akun mitra kamu sedang ditangguhkan.',
+                    default => 'Akun mitra kamu belum dapat digunakan untuk berjualan.',
+                };
+
+                return redirect('/')->with('status', $message);
+            }
         }
 
         return $next($request);

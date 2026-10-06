@@ -14,7 +14,7 @@ class AdminSettlementController extends Controller
     public function index(Request $request): View
     {
         $fees = ServiceFee::query()
-            ->with(['merchant', 'order'])
+            ->with(['merchant', 'order.items'])
             ->where('status', 'unsettled')
             ->latest()
             ->get();
@@ -26,18 +26,17 @@ class AdminSettlementController extends Controller
 
     public function settle(Request $request, int $merchant): RedirectResponse
     {
-        $fees = ServiceFee::query()
-            ->where('merchant_id', $merchant)
-            ->where('status', 'unsettled')
-            ->get();
+        $settled = DB::transaction(function () use ($merchant) {
+            $fees = ServiceFee::query()
+                ->where('merchant_id', $merchant)
+                ->where('status', 'unsettled')
+                ->lockForUpdate()
+                ->get();
 
-        if ($fees->isEmpty()) {
-            return redirect()
-                ->route('admin.settlements')
-                ->with('status', 'Tidak ada service fee yang perlu disettle.');
-        }
+            if ($fees->isEmpty()) {
+                return false;
+            }
 
-        DB::transaction(function () use ($fees, $merchant) {
             $settlement = Settlement::create([
                 'merchant_id' => $merchant,
                 'total_fee' => $fees->sum('fee_amount'),
@@ -45,12 +44,22 @@ class AdminSettlementController extends Controller
                 'settled_at' => now(),
             ]);
 
-            ServiceFee::whereIn('id', $fees->pluck('id'))
+            ServiceFee::query()
+                ->whereIn('id', $fees->pluck('id'))
+                ->where('status', 'unsettled')
                 ->update([
                     'settlement_id' => $settlement->id,
                     'status' => 'settled',
                 ]);
+
+            return true;
         });
+
+        if (! $settled) {
+            return redirect()
+                ->route('admin.settlements')
+                ->with('status', 'Tidak ada service fee yang perlu disettle.');
+        }
 
         return redirect()
             ->route('admin.settlements')

@@ -9,6 +9,8 @@ use App\Models\ServiceFee;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Enums\OrderStatus;
+use App\Services\OrderStatusService;
 
 
 class AdminController extends Controller
@@ -56,5 +58,27 @@ class AdminController extends Controller
         return redirect()
             ->route('admin.merchants')
             ->with('status', 'Status mitra berhasil diperbarui.');
+    }
+    public function cancelOrder(
+        Request $request,
+        int $order,
+        OrderStatusService $statusService
+    ): RedirectResponse {
+        $orderModel = Order::findOrFail($order);
+
+        try {
+            $cancelledOrder = $statusService->cancelByAdmin(
+                $orderModel,
+                $request->user()
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        $cancelledOrder->user->notify(
+            new \App\Notifications\OrderStatusUpdated($cancelledOrder)
+        );
+
+        return back()->with('status', 'Pesanan berhasil dibatalkan oleh admin.');
     }
 }

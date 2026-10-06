@@ -140,22 +140,40 @@
                     </p>
                 </div>
 
+
                 @if ($order->status === \App\Enums\OrderStatus::Pending)
-                <form
-                    action="{{ route('merchant.orders.status', $order) }}"
-                    method="POST"
-                    class="mt-4">
-                    @csrf
-                    @method('PATCH')
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <form
+                        action="{{ route('merchant.orders.status', $order) }}"
+                        method="POST">
+                        @csrf
+                        @method('PATCH')
 
-                    <input type="hidden" name="status" value="confirmed">
+                        <input type="hidden" name="status" value="confirmed">
 
-                    <button
-                        type="submit"
-                        class="w-full rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 sm:w-auto">
-                        Konfirmasi Pesanan
-                    </button>
-                </form>
+                        <button
+                            type="submit"
+                            class="w-full rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 sm:w-auto">
+                            Konfirmasi Pesanan
+                        </button>
+                    </form>
+
+                    <form
+                        action="{{ route('merchant.orders.status', $order) }}"
+                        method="POST"
+                        onsubmit="return confirm('Yakin ingin membatalkan pesanan ini? Stok produk akan dikembalikan.');">
+                        @csrf
+                        @method('PATCH')
+
+                        <input type="hidden" name="status" value="cancelled">
+
+                        <button
+                            type="submit"
+                            class="w-full rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 sm:w-auto">
+                            Batalkan Pesanan
+                        </button>
+                    </form>
+                </div>
 
                 @elseif ($order->status === \App\Enums\OrderStatus::Confirmed)
                 <form

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class MerchantProductController extends Controller
 {
@@ -50,18 +51,35 @@ class MerchantProductController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => [
+                'required',
+                \Illuminate\Validation\Rule::exists('categories', 'id')
+                    ->where('is_active', true),
+            ],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'normal_price' => ['required', 'integer', 'min:0'],
-            'foodsave_price' => ['required', 'integer', 'min:0'],
+            'normal_price' => ['required', 'integer', 'min:1'],
+            'foodsave_price' => [
+                'required',
+                'integer',
+                'min:0',
+                'lt:normal_price',
+            ],
             'stock' => ['required', 'integer', 'min:0'],
             'pickup_start' => ['required', 'date'],
             'pickup_end' => ['required', 'date', 'after:pickup_start'],
             'status' => ['required', 'in:active,inactive'],
         ]);
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('products', 'public');
+            $imagePath = $request->file('image')->store('products', 'public');
+
+            if ($imagePath === false) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['image' => 'Gagal mengunggah gambar. Silakan coba lagi.']);
+            }
+
+            $validated['image'] = $imagePath;
         }
 
         $merchant->products()->create($validated);
@@ -101,10 +119,19 @@ class MerchantProductController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => [
+                'required',
+                \Illuminate\Validation\Rule::exists('categories', 'id')
+                    ->where('is_active', true),
+            ],
             'description' => ['nullable', 'string'],
-            'normal_price' => ['required', 'integer', 'min:0'],
-            'foodsave_price' => ['required', 'integer', 'min:0'],
+            'normal_price' => ['required', 'integer', 'min:1'],
+            'foodsave_price' => [
+                'required',
+                'integer',
+                'min:0',
+                'lt:normal_price',
+            ],
             'stock' => ['required', 'integer', 'min:0'],
             'pickup_start' => ['required', 'date'],
             'pickup_end' => ['required', 'date', 'after:pickup_start'],
@@ -113,7 +140,19 @@ class MerchantProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('products', 'public');
+            $newImagePath = $request->file('image')->store('products', 'public');
+
+            if ($newImagePath === false) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['image' => 'Gagal mengunggah gambar. Silakan coba lagi.']);
+            }
+
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            $validated['image'] = $newImagePath;
         }
 
         $product->update($validated);

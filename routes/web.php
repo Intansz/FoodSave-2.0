@@ -48,6 +48,9 @@ Route::middleware(['auth', 'role:consumer'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
 
+    Route::patch('/pesanan/{order}/cancel', [AdminController::class, 'cancelOrder'])
+    ->name('orders.cancel');
+
     Route::get('/mitra', [AdminController::class, 'merchants'])->name('merchants');
 
     Route::patch('/mitra/{merchant}/status', [AdminController::class, 'updateMerchantStatus'])

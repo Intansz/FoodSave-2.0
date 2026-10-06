@@ -8,6 +8,8 @@ use App\Notifications\OrderStatusUpdated;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Services\OrderStatusService;
+use Illuminate\Validation\ValidationException;
 
 class MerchantController extends Controller
 {
@@ -46,35 +48,37 @@ class MerchantController extends Controller
             'summary' => $summary,
         ]);
     }
-    public function updateOrderStatus(Request $request, int $order): RedirectResponse
-    {
+    public function updateOrderStatus(
+        Request $request,
+        int $order,
+        OrderStatusService $statusService
+    ): RedirectResponse {
         $merchant = $request->user()->merchant;
 
         abort_unless($merchant, 404);
 
-        $order = $merchant->orders()->findOrFail($order);
+        $orderModel = $merchant->orders()->findOrFail($order);
 
         $validated = $request->validate([
-            'status' => ['required', 'in:confirmed,ready_for_pickup,completed,cancelled'],
+            'status' => [
+                'required',
+                'in:confirmed,ready_for_pickup,completed,cancelled',
+            ],
         ]);
 
-        $order->update([
-            'status' => $validated['status'],
-        ]);
-        $order->user->notify(new OrderStatusUpdated($order));
-
-        if ($validated['status'] === OrderStatus::Completed->value) {
-            ServiceFee::firstOrCreate(
-                ['order_id' => $order->id],
-                [
-                    'merchant_id' => $order->merchant_id,
-                    'fee_percentage' => $order->service_fee_percent,
-                    'transaction_amount' => $order->subtotal,
-                    'fee_amount' => $order->service_fee,
-                    'status' => 'unsettled',
-                ]
+        try {
+            $updatedOrder = $statusService->updateByMerchant(
+                $orderModel,
+                OrderStatus::from($validated['status']),
+                $request->user()
             );
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
         }
+
+        $updatedOrder->user->notify(
+            new OrderStatusUpdated($updatedOrder)
+        );
 
         return redirect()
             ->route('merchant.dashboard')

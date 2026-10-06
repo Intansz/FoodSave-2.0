@@ -27,7 +27,7 @@
             @endphp
 
             <div class="rounded-2xl bg-surface p-5 shadow-card">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex flex-col gap-5">
                     <div class="min-w-0">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <h2 class="font-semibold text-ink-900">
@@ -43,15 +43,73 @@
                             {{ $merchantFees->count() }} service fee menunggu settlement
                         </p>
 
-                        <p class="mt-2 text-lg font-bold text-ink-900">
-                            Rp{{ number_format($totalFee, 0, ',', '.') }}
-                        </p>
+
+                        <div class="mt-4 flex justify-center">
+                            @foreach ($merchantFees as $fee)
+                            <div class="w-full max-w-2xl rounded-xl border border-gray-200 p-4">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <p class="font-semibold text-ink-900">
+                                            Pesanan #{{ $fee->order->id }}
+                                        </p>
+
+                                        <p class="mt-1 text-sm text-ink-500">
+                                            Selesai:
+                                            {{ $fee->order->completed_at?->format('d/m/Y H:i') ?? '-' }}
+                                        </p>
+                                    </div>
+
+                                    <span class="w-fit rounded-full bg-yellow-50 px-3 py-1 text-xs font-semibold text-yellow-700">
+                                        Belum Disettle
+                                    </span>
+                                </div>
+
+                                <div class="mt-3 space-y-2">
+                                    @foreach ($fee->order->items as $item)
+                                    <div class="flex justify-between gap-4 text-sm">
+                                        <div>
+                                            <p class="font-medium text-ink-900">
+                                                {{ $item->product_name_snapshot }}
+                                            </p>
+                                            <p class="text-ink-500">
+                                                {{ $item->quantity }} ×
+                                                Rp{{ number_format($item->unit_price, 0, ',', '.') }}
+                                            </p>
+                                        </div>
+
+                                        <p class="shrink-0 font-medium text-ink-900">
+                                            Rp{{ number_format($item->subtotal, 0, ',', '.') }}
+                                        </p>
+                                    </div>
+                                    @endforeach
+                                </div>
+
+                                <div class="mt-3 border-t border-gray-200 pt-3 text-sm">
+                                    <div class="flex justify-between gap-4">
+                                        <span class="text-ink-500">Nilai transaksi</span>
+                                        <span class="font-medium">
+                                            Rp{{ number_format($fee->transaction_amount, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+
+                                    <div class="mt-1 flex justify-between gap-4">
+                                        <span class="text-ink-500">
+                                            Service fee ({{ number_format($fee->fee_percentage, 2, ',', '.') }}%)
+                                        </span>
+                                        <span class="font-bold text-ink-900">
+                                            Rp{{ number_format($fee->fee_amount, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
                     </div>
 
                     <form
                         action="{{ route('admin.settlements.settle', $merchant) }}"
                         method="POST"
-                        class="lg:shrink-0">
+                        class="self-end">
                         @csrf
 
                         <button

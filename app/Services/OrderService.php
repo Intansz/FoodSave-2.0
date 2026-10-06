@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
@@ -23,6 +24,11 @@ class OrderService
      */
     public function place(User $user, Product $product, int $quantity): Order
     {
+        if ($quantity < 1 || $quantity > 20) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Jumlah pesanan harus antara 1 dan 20.',
+            ]);
+        }
         return DB::transaction(function () use ($user, $product, $quantity) {
             /** @var Product $locked */
             $locked = Product::query()
@@ -79,7 +85,7 @@ class OrderService
     private function generateOrderNumber(): string
     {
         do {
-            $number = 'FS-'.now()->format('ymd').'-'.Str::upper(Str::random(5));
+            $number = 'FS-' . now()->format('ymd') . '-' . Str::upper(Str::random(5));
         } while (Order::where('order_number', $number)->exists());
 
         return $number;
